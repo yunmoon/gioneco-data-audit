@@ -13,8 +13,13 @@ export default class DataAudit {
 
   total = 0;
 
-  constructor(private dbConnection: ConnectionOptions, private clickhouseOptions, private cacheTableMap) {
+  log = console
+
+  constructor(private dbConnection: ConnectionOptions, private clickhouseOptions, private cacheTableMap, log?) {
     this.chclient = new ClickHouse(this.clickhouseOptions);
+    if (log) {
+      this.log = log
+    }
   }
   async init() {
     this.connection = await createConnection({
@@ -77,7 +82,7 @@ export default class DataAudit {
     while (rows.length > 0) {
       const uuids = _.map(rows, "uuid");
       const selectUuids = _.map(uuids, uuid => `'${uuid}'`);
-      console.log(`select \`${column_name}\` from \`${chTableName}\` where \`${column_name}\` in (${selectUuids.join(",")})`)
+      this.log.debug(`select \`${column_name}\` from \`${chTableName}\` where \`${column_name}\` in (${selectUuids.join(",")})`)
       const { data } = await this.chclient.querying(`select \`${column_name}\` from \`${chTableName}\` where \`${column_name}\` in (${selectUuids.join(",")})`);
       let clickhouseUuids = _.flatten(data);
       if (clickhouseUuids.length < uuids.length) {
@@ -98,7 +103,12 @@ export default class DataAudit {
               data.push(item);
             }
           }
-          await this.insertDataToClickhouse(data, chTableName).catch(console.error);
+          try {
+            await this.insertDataToClickhouse(data, chTableName);
+          } catch (error) {
+            this.log.error(error)
+            return
+          }
         }
       }
       await this.repository.delete({
@@ -113,7 +123,7 @@ export default class DataAudit {
         }
       });
       if (rows.length === 0) {
-        console.log(`当前数据审计异常数据共${this.total}条`);
+        this.log.info(`当前数据审计异常数据共${this.total}条`);
       }
     }
 
