@@ -18,6 +18,10 @@
     "ts-node": "3.3.0",
     "typescript": "3.3.3333"
   },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/yunmoon/gioneco-data-audit.git"
+  },
   "author": "meiyun",
   "license": "MIT",
   "dependencies": {
