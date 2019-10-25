@@ -55,6 +55,12 @@ export default class DataAudit {
         }
       })
       await this.syncData({ startTime, endTime, auditTable, column_name: cacheData.uuidColumn });
+    } else {
+      //如果数据相同则删除审计表中的x数据
+      await this.repository.delete({
+        auditTable: auditTable,
+        createdAt: Between(startTime, endTime)
+      })
     }
   }
 
@@ -122,11 +128,8 @@ export default class DataAudit {
           createdAt: Between(startTime, endTime)
         }
       });
-      if (rows.length === 0) {
-        this.log.info(`当前数据审计异常数据共${this.total}条`);
-      }
     }
-
+    this.log.info(`当前数据审计异常数据共${this.total}条`);
   }
 
   private insertDataToClickhouse(data, chTableName) {
