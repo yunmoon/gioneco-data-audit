@@ -36,6 +36,16 @@ export class AuditCache {
   uuidColumn: string;
 
   @Column()
+  time: Date;
+
+  @Column("varchar", {
+    nullable: false,
+    length: 32,
+    name: "time_column"
+  })
+  timeColumn: string;
+
+  @Column()
   @CreateDateColumn()
   createdAt: Date;
 

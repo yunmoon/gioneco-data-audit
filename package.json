@@ -1,6 +1,6 @@
 {
   "name": "gioneco-data-audit",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "针对mysql 到 clickhouse 数据同步做审计",
   "main": "./dist/index.js",
   "bin": {
@@ -12,6 +12,7 @@
     "dev": "nodemon --delay 2500ms --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts"
   },
   "devDependencies": {
+    "@types/async": "^3.0.3",
     "@types/node": "^8.10.53",
     "@types/yargs": "^13.0.3",
     "nodemon": "^1.18.8",
@@ -26,6 +27,7 @@
   "license": "MIT",
   "dependencies": {
     "@apla/clickhouse": "^1.6.1",
+    "async": "^3.1.0",
     "lodash": "^4.17.15",
     "moment": "^2.24.0",
     "mysql2": "^1.7.0",

@@ -1,4 +1,4 @@
-import { createConnection, ConnectionOptions, getRepository, Repository, Between, Connection, In } from "typeorm";
+import { createConnection, getRepository, Repository, Between, Connection, In } from "typeorm";
 import { AuditCache } from "./entity/auditCache";
 import * as  ClickHouse from "@apla/clickhouse";
 import path = require("path");
@@ -15,7 +15,7 @@ export default class DataAudit {
 
   log = console
 
-  constructor(private dbConnection: ConnectionOptions, private clickhouseOptions, private cacheTableMap, log?) {
+  constructor(private dbConnection, private clickhouseOptions, private cacheTableMap, log?) {
     this.chclient = new ClickHouse(this.clickhouseOptions);
     if (log) {
       this.log = log
@@ -37,30 +37,28 @@ export default class DataAudit {
     await this.repository.save(data);
   }
 
-  async run({ startTime, endTime, auditTable }) {
+  async run({ startTime, endTime, auditTable, logging = false }) {
     this.total = 0
     const chTableName = this.cacheTableMap[auditTable];
     const cacheTableCount = await this.repository.count({
       auditTable: auditTable,
-      createdAt: Between(startTime, endTime)
+      time: Between(startTime, endTime)
     });
-    const { data } = await this.chclient.querying(`select count(1) from \`${chTableName}\` where \`createdAt\` between '${startTime}' and '${endTime}'`);
-    let [[clickhouseDataCount]] = data;
-    clickhouseDataCount = parseInt(clickhouseDataCount);
-    if (clickhouseDataCount !== cacheTableCount && cacheTableCount > 0) {
+    if (cacheTableCount > 0) {
       const cacheData = await this.repository.findOne({
         where: {
           auditTable,
-          createdAt: Between(startTime, endTime)
+          time: Between(startTime, endTime)
         }
       })
-      await this.syncData({ startTime, endTime, auditTable, column_name: cacheData.uuidColumn });
+      const { data } = await this.chclient.querying(`select count(1) from \`${chTableName}\` where \`${cacheData.timeColumn}\` between '${startTime}' and '${endTime}'`);
+      let [[clickhouseDataCount]] = data;
+      clickhouseDataCount = parseInt(clickhouseDataCount);
+      if (clickhouseDataCount !== cacheTableCount) {
+        await this.syncData({ startTime, endTime, auditTable, column_name: cacheData.uuidColumn, logging });
+      }
     } else {
-      //如果数据相同则删除审计表中的x数据
-      await this.repository.delete({
-        auditTable: auditTable,
-        createdAt: Between(startTime, endTime)
-      })
+      this.log.info(`当前时段内审计表中无数据。`);
     }
   }
 
@@ -76,19 +74,21 @@ export default class DataAudit {
     return data
   }
 
-  private async syncData({ startTime, endTime, auditTable, column_name }) {
+  private async syncData({ startTime, endTime, auditTable, column_name, logging = false }) {
     const chTableName = this.cacheTableMap[auditTable];
     let rows = await this.repository.find({
       take: 100,
       where: {
         auditTable,
-        createdAt: Between(startTime, endTime)
+        time: Between(startTime, endTime)
       }
     });
     while (rows.length > 0) {
       const uuids = _.map(rows, "uuid");
       const selectUuids = _.map(uuids, uuid => `'${uuid}'`);
-      this.log.debug(`select \`${column_name}\` from \`${chTableName}\` where \`${column_name}\` in (${selectUuids.join(",")})`)
+      if (logging) {
+        this.log.debug(`select \`${column_name}\` from \`${chTableName}\` where \`${column_name}\` in (${selectUuids.join(",")})`)
+      }
       const { data } = await this.chclient.querying(`select \`${column_name}\` from \`${chTableName}\` where \`${column_name}\` in (${selectUuids.join(",")})`);
       let clickhouseUuids = _.flatten(data);
       if (clickhouseUuids.length < uuids.length) {
@@ -125,7 +125,7 @@ export default class DataAudit {
         take: 100,
         where: {
           auditTable: auditTable,
-          createdAt: Between(startTime, endTime)
+          time: Between(startTime, endTime)
         }
       });
     }
@@ -147,4 +147,5 @@ export default class DataAudit {
       stream.end();
     })
   }
+
 }

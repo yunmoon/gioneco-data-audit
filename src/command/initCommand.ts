@@ -68,6 +68,14 @@ export class InitCommand implements yargs.CommandModule {
           type: "varchar(32)"
         },
         {
+          name: "time",
+          type: "datetime"
+        },
+        {
+          name: "time_column",
+          type: "varchar(32)"
+        },
+        {
           name: "createdAt",
           type: "datetime",
           default: "now()"
