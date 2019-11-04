@@ -22,8 +22,8 @@ async function syncData(queryRunner: QueryRunner,
     })
     conditionStr = conditionArray.join(" and ");
   }
-  let rows = await queryRunner.query(`select * from \`${tableName}\` where \`${timeColumn}\` between ? and ? ${condition ? `and ${conditionStr}` : ""} order by \`${timeColumn}\` asc limit ?,?`, [start, end, page * limit, limit]);
-  let [count] = await queryRunner.query(`select count(1) as total from \`${tableName}\` where \`${timeColumn}\` between ? and ? ${condition ? ` and ${conditionStr}` : ""}`, [start, end]);
+  let rows = await queryRunner.query(`select * from \`${tableName}\` where \`${timeColumn}\` between ? and ? ${conditionStr ? `and ${conditionStr}` : ""} order by \`${timeColumn}\` asc limit ?,?`, [start, end, page * limit, limit]);
+  let [count] = await queryRunner.query(`select count(1) as total from \`${tableName}\` where \`${timeColumn}\` between ? and ? ${conditionStr ? ` and ${conditionStr}` : ""}`, [start, end]);
   console.log(`当前数据库${tableName}需要同步的数据量为：${count.total}条`)
   while (rows.length > 0) {
     for (const item of rows) {
@@ -139,7 +139,7 @@ export class SyncDataToAuditCacheTableCommand implements yargs.CommandModule {
   }
   async handler(args) {
     if (args.number > 0 && args.thread > args.number) {
-      throw new Error("--thread 不允许大于 --args.number");
+      throw new Error("--thread 不允许大于 --number");
     }
     let condition = {}, conditionArray;
     if (args.condition) {

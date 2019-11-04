@@ -84,7 +84,9 @@ export class AuditCommand implements yargs.CommandModule {
       port: args.chPort,
       user: args.chUser,
       password: args.chPassword,
-      database: args.chDatabase
+      queryOptions: {
+        database: args.chDatabase
+      }
     }
 
     const tableMap = args.tableMap.split(",");

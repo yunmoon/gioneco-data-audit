@@ -27,7 +27,13 @@ let auditData = new AuditData({
   logging: true
 }, {
   //clickhouse连接参数
-  host: "10.255.50.45", port: "8123", user: "default", password: ""
+  host: "10.255.50.45",
+  port: "8123",
+  user: "default",
+  password: "",
+  queryOptions: {
+    database: "default"
+  }
 }, {
   // mysql clickhouse数据表映射 orders为mysql数据表  t-real-data-order-pay-success为clickhouse数据表
   orders: "t-real-data-order-pay-success"

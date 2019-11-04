@@ -77,7 +77,7 @@ export default class DataAudit {
   private async syncData({ startTime, endTime, auditTable, column_name, logging = false }) {
     const chTableName = this.cacheTableMap[auditTable];
     let rows = await this.repository.find({
-      take: 100,
+      take: 1000,
       where: {
         auditTable,
         time: Between(startTime, endTime)
@@ -133,11 +133,13 @@ export default class DataAudit {
   }
 
   private insertDataToClickhouse(data, chTableName) {
+    const _this = this
     return new Promise((resolve, reject) => {
       const stream = this.chclient.query(`INSERT INTO \`${chTableName}\``, { format: "JSONEachRow" }, async function (err, result) {
         if (err) {
           reject(err)
         } else {
+          _this.log.info(`当前已同步${_this.total}条数据`)
           resolve(result);
         }
       });

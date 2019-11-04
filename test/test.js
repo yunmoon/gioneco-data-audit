@@ -26,9 +26,10 @@ auditData.init().then(async _this => {
       uuid: item.orderNo,
       auditTable: "orders",
       uuidColumn: "orderNo",
+      time_column: "createdAt",
+      time: item.createdAt,
       extra: JSON.stringify({
-        userId: item.userId,
-        orderType: 1
+        userId: item.userId
       })
     })
   }
